@@ -4,10 +4,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error , r2_score
 import matplotlib.pyplot as plt
 import requests
 from datetime import datetime, timedelta
+import seaborn as sns
+from sklearn.ensemble import RandomForestRegressor
+import joblib  
  #Load data from Excel sheets
 df_demand = pd.read_excel('Book2.xlsx', sheet_name='Electricity_demad')
 df_weather = pd.read_excel('Book2.xlsx', sheet_name='Load_vs_temp_humidity')
@@ -53,8 +56,7 @@ df_demand.dropna(subset=['DateTime'], inplace=True)
 # Convert the 'Time' column to string format if it's of type datetime.time
 if df_weather['Time'].dtype == 'O':  # Check if it's an object type
     # df_weather['Time'] = df_weather['Time'].apply(lambda x: x.strftime('%H:%M:%S') if isinstance(x, datetime.time) else str(x))
-    import pandas as pd
-from datetime import datetime  # Import datetime module
+  
 
 # Assuming df_weather is already defined and loaded with data
 
@@ -87,13 +89,7 @@ df_combined = pd.merge(df_demand, df_weather, left_index=True, right_index=True,
 print(df_combined.head())
 
 
-import requests
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
+
 
 # Function to get weather forecast
 def get_weather_forecast(api_key, location=None, latitude=None, longitude=None):
@@ -208,15 +204,6 @@ plt.show()
 print(forecast[['DateTime', 'Predicted_Demand']])
 
 
-import openpyxl
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Load data from Excel sheets
 df_demand = pd.read_excel('Book2.xlsx', sheet_name='Electricity_demad')
@@ -259,7 +246,6 @@ df_demand.dropna(subset=['Time'], inplace=True)
 df_weather.dropna(subset=['Time'], inplace=True)
 
 
-import pandas as pd
 
 # Assuming df_demand and df_weather are your DataFrames
 
@@ -349,14 +335,8 @@ if not df_combined.empty:
 else:
     print("Merged DataFrame is empty; skipping feature engineering.")
 
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+
+
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -451,7 +431,6 @@ plt.ylabel('Unrestricted Demand')
 plt.tight_layout()
 plt.show()
 # Actual vs Predicted Load 
-import matplotlib.pyplot as plt
 plt.figure(figsize=(12,6))
 plt.plot(y_test.reset_index(drop=True), label='Actual Load')
 plt.plot(y_pred, label='Predicted Load', linestyle='--')
@@ -461,11 +440,8 @@ plt.title('Actual vs Predicted Load')
 plt.legend()
 plt.show()
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
-from datetime import datetime, timedelta
+
+
 
 # Load the data
 path = "/content/Year Data.xlsx"  
@@ -591,10 +567,6 @@ while True:
 print("Thank you for using the electricity consumption prediction model!")
 
 
-import random
-import pandas as pd
-from datetime import datetime, timedelta
-from sklearn.ensemble import RandomForestRegressor
 
 # Example DataFrame structure with an empty string in the Real_Estate column
 data = pd.DataFrame({
@@ -674,11 +646,6 @@ def get_prediction():
 # Run the prediction function
 get_prediction()
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
-from datetime import datetime, timedelta
 
 # Load the data
 path = r"/content/Delhi_Energy_Data (1).xlsx"  # Ensure this is the correct path to your Excel file
@@ -881,12 +848,6 @@ while True:
 
 print("Thank you for using the electricity consumption prediction model!")
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
-from datetime import datetime, timedelta
-import joblib  # For saving/loading models
 
 # Load the data
 def load_data():
@@ -1067,6 +1028,37 @@ def main():
     data, real_estate_data = load_data()
     while True:
         get_prediction(data, real_estate_data)
+
+# Example DataFrame structure with an empty string in the Real_Estate column
+data = pd.DataFrame({
+    'Region': ['North', 'South', 'East', 'West'],
+    'Real_Estate': ['Residential', 'Commercial', 'Industrial', '']  # Added empty string
+})
+
+# Updated function to get user input and make prediction
+def get_prediction():
+    current_date = datetime.now().date()
+    print(f"Current date is: {current_date}")
+
+    # Get location input from the user with clear instructions
+    location = input("Enter the location (choose from: North, South, East, West, Residential, Commercial, Industrial): ").strip()
+
+    # Ask for the date input
+    while True:
+        date_str = input("Enter a date (YYYY-MM-DD) within the next 30 days (or type 'exit' to quit): ").strip()
+
+        if date_str.lower() == 'exit':
+            print("Exiting the prediction tool.")
+            return
+
+        try:
+            input_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            if current_date <= input_date <= current_date + timedelta(days=30):
+                break
+            else:
+                print("Please enter a date within the next 30 days.")
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
 
 
 

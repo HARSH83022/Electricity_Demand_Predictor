@@ -349,5 +349,107 @@ if not df_combined.empty:
 else:
     print("Merged DataFrame is empty; skipping feature engineering.")
 
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Generate random data for 10 days at hourly intervals
+date_rng = pd.date_range(start='2023-01-01', end='2023-01-10', freq='H')
+
+# Create random demand and weather data
+df = pd.DataFrame(date_rng, columns=['DateTime'])
+df['Demand'] = np.random.randint(50, 100, size=(len(date_rng)))
+df['Load_Shedding'] = np.random.randint(0, 20, size=(len(date_rng)))
+df['Unrestricted_Demand'] = df['Demand'] + df['Load_Shedding']
+df['Temperature'] = np.random.uniform(15, 30, size=(len(date_rng)))
+df['Humidity'] = np.random.uniform(40, 100, size=(len(date_rng)))
+
+# Feature Engineering: Extract hour, day of week, month, and weekend status
+df['Hour'] = df['DateTime'].dt.hour
+df['DayOfWeek'] = df['DateTime'].dt.dayofweek
+df['Month'] = df['DateTime'].dt.month
+df['IsWeekend'] = df['DayOfWeek'].isin([5, 6]).astype(int)
+
+# Define features and target
+features = ['Temperature', 'Humidity', 'Hour', 'DayOfWeek', 'Month', 'IsWeekend']
+target = 'Unrestricted_Demand'
+
+# Split the data into training and testing sets
+X = df[features]
+y = df[target]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Scale the data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Train a Random Forest model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test_scaled)
+
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = r2_score(y_test, y_pred)
+
+# Print evaluation metrics
+print(f"Mean Absolute Error: {mae}")
+print(f"Root Mean Squared Error: {rmse}")
+print(f"R-squared Score: {r2}")
+
+# Visualizations
+
+# 1. Actual vs Predicted Scatter Plot
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, alpha=0.5, label='Predicted vs Actual')
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+plt.xlabel('Actual Demand')
+plt.ylabel('Predicted Demand')
+plt.title('Actual vs Predicted Demand')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 2. Feature Importance Plot
+plt.figure(figsize=(10, 6))
+feature_importance = model.feature_importances_
+sorted_idx = np.argsort(feature_importance)
+plt.barh(np.array(features)[sorted_idx], feature_importance[sorted_idx], color='skyblue')
+plt.title('Feature Importance')
+plt.xlabel('Importance')
+plt.tight_layout()
+plt.show()
+
+
+# 4. Demand vs Temperature Scatter Plot
+plt.figure(figsize=(10, 6))
+plt.scatter(df['Temperature'], df['Unrestricted_Demand'], alpha=0.5)
+plt.title('Demand vs Temperature')
+plt.xlabel('Temperature (°C)')
+plt.ylabel('Unrestricted Demand')
+plt.tight_layout()
+plt.show()
+
+# 5. Demand by Hour of the Day (Box Plot)
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Hour', y='Unrestricted_Demand', data=df)
+plt.title('Demand Distribution by Hour of Day')
+plt.xlabel('Hour')
+plt.ylabel('Unrestricted Demand')
+plt.tight_layout()
+plt.show()
+
 
 

@@ -1,0 +1,57 @@
+/* Input panel styles */
+.input-panel {
+    float: left;
+    width: 25%;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+/* Input group styles */
+.input-group {
+    margin-bottom: 15px;
+}
+/* Label styles */
+.input-group label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    color: #5d00b3;
+}
+/* Input field styles */
+.input-field {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: border-color 0.3s;
+}
+/* Focus state for input fields */
+.input-field:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+/* Button styles */
+#sendData {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+#sendData:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .input-panel {
+        width: 100%;
+        float: none;
+    }
+}

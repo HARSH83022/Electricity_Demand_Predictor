@@ -59,8 +59,7 @@ df_weather.set_index('DateTime', inplace=True)
 df_combined = pd.merge(df_demand, df_weather, left_index=True, right_index=True, how='inner')
 # Check the combined data
 print(df_combined.head())
-# Define area features to merge
-area_features = ['Price', 'Area', 'Location', 'No. of Bedrooms', 'PowerBackup']  # Add more relevant features
+area_features = ['Price', 'Area', 'Location', 'No. of Bedrooms', 'PowerBackup'] 
 # Check the columns in df_combined and df_area
 print("df_combined columns:", df_combined.columns)
 print("df_area columns:", df_area.columns)
@@ -208,9 +207,9 @@ missing_forecast_features = [feature for feature in features if feature not in f
 if missing_forecast_features:
     raise KeyError(f"The following features are missing in forecast: {missing_forecast_features}")
 # Scale training features
-scaler = StandardScaler()  # Initialize scaler
-scaler.fit(X[features])  # Fit on training data
-X_scaled = scaler.transform(X[features])  # Scale the training features
+scaler = StandardScaler() 
+scaler.fit(X[features]) 
+X_scaled = scaler.transform(X[features]) 
 # Initialize and train the model
 model = RandomForestRegressor()
 # Assuming y is your target variable (this should be defined appropriately)
@@ -359,12 +358,10 @@ df['IsWeekend'] = df['DayOfWeek'].isin([5, 6]).astype(int)
 # Define features and target
 features = ['Temperature', 'Humidity', 'Hour', 'DayOfWeek', 'Month', 'IsWeekend']
 target = 'Unrestricted_Demand'
-
 # Split the data into training and testing sets
 X = df[features]
 y = df[target]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
 # Scale the data
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
@@ -386,9 +383,6 @@ r2 = r2_score(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
 print(f"Root Mean Squared Error: {rmse}")
 print(f"R-squared Score: {r2}")
-
-# Visualizations
-
 # 1. Actual vs Predicted Scatter Plot
 plt.figure(figsize=(10, 6))
 plt.scatter(y_test, y_pred, alpha=0.5, label='Predicted vs Actual')
@@ -841,7 +835,6 @@ def prepare_data_for_real_estate(location):
     y = location_data['Energy']
 
     return X, y
-# Create features for prediction
 def create_features_for_prediction(date, historical_data):
     pred_df = pd.DataFrame(index=[date])
     pred_df.index = pd.to_datetime(pred_df.index)
@@ -921,6 +914,169 @@ while True:
     if input("Do you want to make another prediction? (yes/no): ").lower() != 'yes':
         break
 print("Thank you for using the electricity consumption prediction model!")
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from datetime import datetime, timedelta
+import joblib 
+def load_data():
+    try:
+        energy_data_path = r"/content/Delhi_Energy_Data (1).xlsx"
+        data = pd.read_excel(energy_data_path, parse_dates=["Date"])
+        data.columns = data.columns.str.strip()  # Remove any extra spaces
+
+        real_estate_data_path = r"/content/cleaned_real_estate_data.csv"
+        real_estate_data = pd.read_excel(real_estate_data_path)
+        real_estate_data.columns = real_estate_data.columns.str.strip()  # Remove any extra spaces
+
+        return data, real_estate_data
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        raise
+
+# Create features
+def create_features(df):
+    df = df.copy()
+    df['year'] = df.index.year
+    df['month'] = df.index.month
+    df['day_of_week'] = df.index.dayofweek
+    df['day_of_year'] = df.index.dayofyear
+
+    # Lag features
+    for lag in [1, 7, 14, 30]:
+        df[f'Energy_lag{lag}'] = df['Energy'].shift(lag)
+
+    # Rolling mean features
+    for window in [7, 14, 30]:
+        df[f'Energy_rolling_mean{window}'] = df['Energy'].rolling(window=window).mean()
+
+    return df
+
+# Prepare data for a specific region
+def prepare_data_for_region(data, region):
+    region_data = data[data['Region'] == region]
+
+    if region_data.empty:
+        raise ValueError(f"No data found for the region: {region}")
+
+    X = region_data[['year', 'month', 'day_of_week', 'day_of_year',
+                     'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+                     'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']]
+    y = region_data['Energy']
+
+    return X, y
+
+# Prepare data for real estate
+def prepare_data_for_real_estate(real_estate_data, location):
+    location_data = real_estate_data[real_estate_data['Location'] == location]
+
+    if location_data.empty:
+        raise ValueError(f"No data found for the location: {location}")
+
+    location_data = create_features(location_data.set_index('Date'))
+    X = location_data[['year', 'month', 'day_of_week', 'day_of_year',
+                       'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+                       'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']]
+    y = location_data['Energy']
+
+    return X, y
+
+# Create features for a new date based on historical data
+def create_features_for_prediction(date, historical_data):
+    pred_df = pd.DataFrame(index=[date])
+    pred_df.index = pd.to_datetime(pred_df.index)
+
+    pred_df['year'] = pred_df.index.year
+    pred_df['month'] = pred_df.index.month
+    pred_df['day_of_week'] = pred_df.index.dayofweek
+    pred_df['day_of_year'] = pred_df.index.dayofyear
+    for lag in [1, 7, 14, 30]:
+        pred_df[f'Energy_lag{lag}'] = historical_data['Energy'].shift(lag).iloc[-1]
+    for window in [7, 14, 30]:
+        pred_df[f'Energy_rolling_mean{window}'] = historical_data['Energy'].rolling(window=window).mean().iloc[-1]
+    return pred_df
+# Predict for a specific date and region
+def predict_for_date(date, region, model, data):
+    region_data = data[data['Region'] == region]
+
+    if region_data.empty:
+        raise ValueError(f"No data found for the region: {region}")
+
+    pred_df = create_features_for_prediction(date, region_data)
+
+    features = ['year', 'month', 'day_of_week', 'day_of_year',
+                'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+                'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']
+ 
+    prediction = model.predict(pred_df[features])
+    return prediction[0]
+
+def load_model(model_path):
+    try:
+        return joblib.load(model_path)
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise
+
+def save_model(model, model_path):
+    joblib.dump(model, model_path)
+def get_prediction(data, real_estate_data):
+    current_date = datetime.now().date()
+    print(f"Current date is: {current_date}")
+
+    prediction_type = input("Do you want to predict energy consumption for 'Region' or 'Real Estate'? ").strip().lower()
+
+    if prediction_type not in ['region', 'real estate']:
+        print("Invalid input. Please enter 'Region' or 'Real Estate'.")
+        return
+
+    if prediction_type == 'real estate':
+        # List available locations
+        print("Available locations in real estate data:")
+        if 'Location' not in real_estate_data.columns:
+            print("The 'Location' column is not found in the real estate data.")
+            return
+        print(real_estate_data['Location'].unique())
+        location = input("Enter the location of the real estate: ").strip()
+
+    else:
+        region = input("Enter the region in Delhi where you want to predict electricity consumption: ").strip()
+     if prediction_type == 'real estate' and location not in real_estate_data['Location'].values:
+        print(f"No data found for the location: {location}")
+        return
+    elif prediction_type == 'region' and region not in data['Region'].unique():
+        print(f"No data found for the region: {region}")
+        return
+    while True:
+        date_str = input("Enter a date (YYYY-MM-DD) within the next 30 days (or type 'exit' to quit): ").strip()
+        if date_str.lower() == 'exit':
+            print("Exiting the prediction tool.")
+            return
+        try:
+            input_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            if current_date <= input_date <= current_date + timedelta(days=30):
+                break
+            else:
+                print("Please enter a date within the next 30 days.")
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+    if prediction_type == 'real estate':
+        X, y = prepare_data_for_real_estate(real_estate_data, location)
+    else:
+        X, y = prepare_data_for_region(data, region)
+
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    save_model(model, 'energy_prediction_model.joblib')
+    prediction = predict_for_date(input_date, region if prediction_type == 'region' else location, model, data)
+    print(f"Predicted electricity consumption on {input_date} in {region if prediction_type == 'region' else location}: {prediction:.2f} MWh")
+
+def main():
+    data, real_estate_data = load_data()
+    while True:
+        get_prediction(data, real_estate_data)
+
 
  
  

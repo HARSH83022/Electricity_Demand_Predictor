@@ -57,13 +57,11 @@ df_weather.dropna(subset=['DateTime'], inplace=True)
 df_weather.set_index('DateTime', inplace=True)
 # Now that both DataFrames have 'DateTime' as index, we can merge them
 df_combined = pd.merge(df_demand, df_weather, left_index=True, right_index=True, how='inner')
-# Check the combined data
+
 print(df_combined.head())
 area_features = ['Price', 'Area', 'Location', 'No. of Bedrooms', 'PowerBackup'] 
-# Check the columns in df_combined and df_area
 print("df_combined columns:", df_combined.columns)
 print("df_area columns:", df_area.columns)
-# Create the merge key in df_combined if necessary
 required_columns_combined = ['Price', 'Area', 'Location']
 if all(col in df_combined.columns for col in required_columns_combined):
     df_combined['PriceAreaLocation'] = (df_combined['Price'].astype(str) +
@@ -71,7 +69,6 @@ if all(col in df_combined.columns for col in required_columns_combined):
                                          df_combined['Location'].astype(str))
 else:
     print("Required columns missing in df_combined for creating 'PriceAreaLocation'.")
-# Create the merge key in df_area if necessary
 required_columns_area = ['Price', 'Area', 'Location']
 if all(col in df_area.columns for col in required_columns_area):
     df_area['PriceAreaLocation'] = (df_area['Price'].astype(str) +
@@ -362,24 +359,16 @@ target = 'Unrestricted_Demand'
 X = df[features]
 y = df[target]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-# Scale the data
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
-
 # Train a Random Forest model
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train_scaled, y_train)
-
-# Make predictions
 y_pred = model.predict(X_test_scaled)
-
-# Evaluate the model
 mae = mean_absolute_error(y_test, y_pred)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 r2 = r2_score(y_test, y_pred)
-
-# Print evaluation metrics
 print(f"Mean Absolute Error: {mae}")
 print(f"Root Mean Squared Error: {rmse}")
 print(f"R-squared Score: {r2}")
@@ -1076,9 +1065,64 @@ def main():
     data, real_estate_data = load_data()
     while True:
         get_prediction(data, real_estate_data)
+data = pd.DataFrame({
+    'Time': pd.date_range(start='2024-01-01', periods=100, freq='D'),
+    'Energy': random.choices(range(100, 500), k=100),
+    'Region': ['north delhi', 'south delhi', 'east delhi', 'west delhi', 'dwarka'] * 20,
+    'year': [2024] * 100,
+    'month': [1] * 30 + [2] * 28 + [3] * 31 + [4] * 11,
+    'day_of_week': pd.date_range(start='2024-01-01', periods=100, freq='D').dayofweek,
+    'day_of_year': pd.date_range(start='2024-01-01', periods=100, freq='D').dayofyear,
+    'Energy_lag1': random.choices(range(100, 500), k=100),
+    'Energy_lag7': random.choices(range(100, 500), k=100),
+    'Energy_lag14': random.choices(range(100, 500), k=100),
+    'Energy_lag30': random.choices(range(100, 500), k=100),
+    'Energy_rolling_mean7': random.choices(range(100, 500), k=100),
+    'Energy_rolling_mean14': random.choices(range(100, 500), k=100),
+    'Energy_rolling_mean30': random.choices(range(100, 500), k=100),
+    'Temperature': random.choices(range(15, 35), k=100)
+})
+data['Time'] = pd.to_datetime(data['Time']) 
+data.set_index('Time', inplace=True)  
+features = ['year', 'month', 'day_of_week', 'day_of_year',
+            'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+            'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30',
+            'Temperature']
+X = data[features]
+y = data['Energy']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f'Mean Absolute Error: {mae}')
+print(f'Mean Squared Error: {mse}')
+print(f'R² Score: {r2}')
+# Save the model
+joblib.dump(model, 'energy_prediction_model.pkl')
+loaded_model = joblib.load('energy_prediction_model.pkl')
+# Function for making predictions
+def predict_energy(input_data):
+    return loaded_model.predict(pd.DataFrame(input_data))
+example_input = {
+    'year': [2024],
+    'month': [10],
+    'day_of_week': [2],  
+    'day_of_year': [290],
+    'Energy_lag1': [200],
+    'Energy_lag7': [210],
+    'Energy_lag14': [220],
+    'Energy_lag30': [230],
+    'Energy_rolling_mean7': [240],
+    'Energy_rolling_mean14': [250],
+    'Energy_rolling_mean30': [260],
+    'Temperature': [25]
+}
+prediction = predict_energy(example_input)
+print(f'Predicted Energy Consumption: {prediction[0]} MWh')
 
-
- 
  
 
 

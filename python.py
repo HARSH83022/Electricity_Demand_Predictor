@@ -698,6 +698,104 @@ plt.ylabel('Load (MW)')
 plt.title('Actual vs Predicted Load')
 plt.legend()
 plt.show()
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from datetime import datetime, timedelta
+# Load the data
+path = "/content/Year Data.xlsx"  
+data = pd.read_excel(path, parse_dates=["Date"])
+data.columns = data.columns.str.strip()  
+# Set the "Date" column as the index
+data.set_index("Date", inplace=True)
+# Print column names for debugging
+print("Columns in DataFrame:", data.columns)
+# Check if 'Energy' column exists
+if 'Energy' not in data.columns:
+    raise ValueError("The 'Energy' column is not present in the data.")
+# Function to create features
+def create_features(df):
+    df = df.copy()
+    if not isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.to_datetime(df.index)
+    df['year'] = df.index.year
+    df['month'] = df.index.month
+    df['day_of_week'] = df.index.dayofweek
+    df['day_of_year'] = df.index.dayofyear
+    # Create lag features
+    for lag in [1, 7, 14, 30]:
+        df[f'Energy_lag{lag}'] = df['Energy'].shift(lag)
+    for window in [7, 14, 30]:
+        df[f'Energy_rolling_mean{window}'] = df['Energy'].rolling(window=window).mean()
+    return df
+data = create_features(data)
+data = data.dropna()  
+# Define features and target
+X = data[['year', 'month', 'day_of_week', 'day_of_year',
+           'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+           'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']]
+y = data['Energy']
+# Train the model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
+# Function to create features for a new date based on historical data
+def create_features_for_prediction(date, historical_data):
+    # Create a DataFrame for the prediction date
+    pred_df = pd.DataFrame(index=[date])
+    pred_df.index = pd.to_datetime(pred_df.index)  # Ensure index is a DatetimeIndex
+    # Create basic datetime features
+    pred_df['year'] = pred_df.index.year
+    pred_df['month'] = pred_df.index.month
+    pred_df['day_of_week'] = pred_df.index.dayofweek
+    pred_df['day_of_year'] = pred_df.index.dayofyear
+
+    # Calculate lag features using the last available historical data
+    for lag in [1, 7, 14, 30]:
+        pred_df[f'Energy_lag{lag}'] = historical_data['Energy'].shift(lag).iloc[-1]
+    # Calculate rolling mean features using the historical data
+    for window in [7, 14, 30]:
+        pred_df[f'Energy_rolling_mean{window}'] = historical_data['Energy'].rolling(window=window).mean().iloc[-1]
+    return pred_df
+# Function to predict for a specific date
+def predict_for_date(date):
+    # Generate features for the prediction date
+    pred_df = create_features_for_prediction(date, data)
+    features = ['year', 'month', 'day_of_week', 'day_of_year',
+                'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
+                'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']
+    prediction = model.predict(pred_df[features])
+    return prediction[0]
+
+# Function to get user input and make prediction
+def get_prediction():
+    current_date = datetime.now().date()  
+    print(f"Current date is: {current_date}")  
+    # Get date input from user
+    while True:
+        date_str = input("Enter a date (YYYY-MM-DD) within the next 30 days (or type 'exit' to quit): ").strip()
+        # Exit condition
+        if date_str.lower() == 'exit':
+            print("Exiting the prediction tool.")
+            return
+        try:
+            input_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            # Check if the date is within the next 30 days
+            if current_date <= input_date <= current_date + timedelta(days=30):
+                break
+            else:
+                print("Please enter a date within the next 30 days.")
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+    # Make prediction
+    prediction = predict_for_date(input_date)
+    print(f"Predicted electricity consumption on {input_date}: {prediction:.2f} MWh")
+# Main execution
+while True:
+    get_prediction()
+    if input("Do you want to make another prediction? (yes/no): ").lower() != 'yes':
+        break
+print("Thank you for using the electricity consumption prediction model!")
  
  
 

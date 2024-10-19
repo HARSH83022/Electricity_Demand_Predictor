@@ -687,6 +687,17 @@ plt.xlabel('Hour')
 plt.ylabel('Unrestricted Demand')
 plt.tight_layout()
 plt.show()
+# FOR PREDICTING GRAPHICAL REPRESENTATION OF ACTUAL AND PREDICTED LOAD
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(12,6))
+plt.plot(y_test.reset_index(drop=True), label='Actual Load')
+plt.plot(y_pred, label='Predicted Load', linestyle='--')
+plt.xlabel('Time')
+plt.ylabel('Load (MW)')
+plt.title('Actual vs Predicted Load')
+plt.legend()
+plt.show()
  
  
 

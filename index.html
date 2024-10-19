@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi Power Load Predictor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        #input-section, #output-section {
+            margin-top: 20px;
+        }
+        label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="input-section">
+    <h3>Input Details</h3>
+    <label>Latitude: <input type="text" id="latitude" readonly></label>
+    <label>Longitude: <input type="text" id="longitude" readonly></label><br><br>
+    <label>Region: <input type="text" id="region" readonly></label><br><br>
+    <label>Date: <input type="date" id="date"></label><br><br>
+    <label>Temperature (°C): <input type="text" id="temperature" readonly></label><br><br>
+    <label>Humidity (%): <input type="text" id="humidity" readonly></label><br><br>
+    <label>Holiday: <input type="text" id="holiday" readonly></label><br><br>
+    <button id="sendData">Send Data</button>
+</div>
+<div id="output-section">
+    <h3>Predicted Load</h3>
+    <p>Date: <span id="predicted-date"></span></p>
+    <p>Region: <span id="predicted-region"></span></p>
+    <p>Temperature: <span id="predicted-temperature"></span></p>
+    <p>Humidity: <span id="predicted-humidity"></span></p>
+    <p>Holiday: <span id="predicted-holiday"></span></p>
+    <p>Predicted Power Load: <span id="predicted-load"></span></p>
+</div>

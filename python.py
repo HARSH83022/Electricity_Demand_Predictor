@@ -502,7 +502,7 @@ df_combined.columns = df_combined.columns.str.strip().str.replace(' ', '_')
 # Print cleaned column names for debugging
 print("Cleaned Combined DataFrame Columns:", df_combined.columns)
 # Define target variable after confirming the column name
-target = 'Un-Restricted_Demand'  # Adjust according to your cleaned column names
+target = 'Un-Restricted_Demand' 
 
 # Feature Engineering
 if not df_combined.empty:
@@ -552,6 +552,53 @@ if not df_combined.empty:
             print("Merged DataFrame is empty; skipping feature engineering.")
 else:
     print("Merged DataFrame is empty; skipping feature engineering.")
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Set a random seed for reproducibility
+np.random.seed(42)
+# Generate random dates and times
+date_rng = pd.date_range(start='2023-01-01', end='2023-01-10', freq='H')
+time_rng = date_rng.time
+# Create Demand DataFrame
+df_demand = pd.DataFrame(date_rng, columns=['DateTime'])
+df_demand['Demand'] = np.random.randint(50, 100, size=(len(date_rng)))
+df_demand['Load Shedding'] = np.random.randint(0, 20, size=(len(date_rng)))
+df_demand['Un-Restricted Demand'] = df_demand['Demand'] + df_demand['Load Shedding']
+# Create Weather DataFrame
+df_weather = pd.DataFrame(date_rng, columns=['DateTime'])
+df_weather['Load (MW)'] = np.random.uniform(100, 200, size=(len(date_rng)))
+df_weather['Temperature (°C)'] = np.random.uniform(15, 30, size=(len(date_rng)))
+df_weather['Humidity (%)'] = np.random.uniform(40, 100, size=(len(date_rng)))
+# Print the generated datasets
+print("Demand DataFrame:\n", df_demand.head())
+print("\nWeather DataFrame:\n", df_weather.head())
+# Merge DataFrames
+merged_df = pd.merge(df_demand, df_weather, on='DateTime', how='outer')
+# Visualize the Demand and Weather Data
+plt.figure(figsize=(12, 6))
+# Plot Demand
+plt.subplot(2, 1, 1)
+plt.plot(merged_df['DateTime'], merged_df['Demand'], label='Demand', color='blue')
+plt.plot(merged_df['DateTime'], merged_df['Un-Restricted Demand'], label='Un-Restricted Demand', color='orange')
+plt.title('Demand and Un-Restricted Demand Over Time')
+plt.xlabel('DateTime')
+plt.ylabel('Demand (MW)')
+plt.xticks(rotation=45)
+plt.legend()
+# Plot Temperature
+plt.subplot(2, 1, 2)
+plt.plot(merged_df['DateTime'], merged_df['Temperature (°C)'], label='Temperature (°C)', color='green')
+plt.title('Temperature Over Time')
+plt.xlabel('DateTime')
+plt.ylabel('Temperature (°C)')
+plt.xticks(rotation=45)
+plt.legend()
+plt.tight_layout()
+plt.show()
+ 
+ 
 
 
 

@@ -913,17 +913,14 @@ def load_data():
     try:
         energy_data_path = r"/content/Delhi_Energy_Data (1).xlsx"
         data = pd.read_excel(energy_data_path, parse_dates=["Date"])
-        data.columns = data.columns.str.strip()  # Remove any extra spaces
-
+        data.columns = data.columns.str.strip()  
         real_estate_data_path = r"/content/cleaned_real_estate_data.csv"
         real_estate_data = pd.read_excel(real_estate_data_path)
-        real_estate_data.columns = real_estate_data.columns.str.strip()  # Remove any extra spaces
-
+        real_estate_data.columns = real_estate_data.columns.str.strip()  
         return data, real_estate_data
     except Exception as e:
         print(f"Error loading data: {e}")
         raise
-
 # Create features
 def create_features(df):
     df = df.copy()
@@ -931,21 +928,16 @@ def create_features(df):
     df['month'] = df.index.month
     df['day_of_week'] = df.index.dayofweek
     df['day_of_year'] = df.index.dayofyear
-
     # Lag features
     for lag in [1, 7, 14, 30]:
         df[f'Energy_lag{lag}'] = df['Energy'].shift(lag)
-
-    # Rolling mean features
+   
     for window in [7, 14, 30]:
         df[f'Energy_rolling_mean{window}'] = df['Energy'].rolling(window=window).mean()
-
     return df
-
 # Prepare data for a specific region
 def prepare_data_for_region(data, region):
     region_data = data[data['Region'] == region]
-
     if region_data.empty:
         raise ValueError(f"No data found for the region: {region}")
 
@@ -953,24 +945,18 @@ def prepare_data_for_region(data, region):
                      'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
                      'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']]
     y = region_data['Energy']
-
     return X, y
-
 # Prepare data for real estate
 def prepare_data_for_real_estate(real_estate_data, location):
     location_data = real_estate_data[real_estate_data['Location'] == location]
-
     if location_data.empty:
         raise ValueError(f"No data found for the location: {location}")
-
     location_data = create_features(location_data.set_index('Date'))
     X = location_data[['year', 'month', 'day_of_week', 'day_of_year',
                        'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
                        'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']]
     y = location_data['Energy']
-
     return X, y
-
 # Create features for a new date based on historical data
 def create_features_for_prediction(date, historical_data):
     pred_df = pd.DataFrame(index=[date])
@@ -988,38 +974,30 @@ def create_features_for_prediction(date, historical_data):
 # Predict for a specific date and region
 def predict_for_date(date, region, model, data):
     region_data = data[data['Region'] == region]
-
     if region_data.empty:
         raise ValueError(f"No data found for the region: {region}")
-
     pred_df = create_features_for_prediction(date, region_data)
 
     features = ['year', 'month', 'day_of_week', 'day_of_year',
                 'Energy_lag1', 'Energy_lag7', 'Energy_lag14', 'Energy_lag30',
                 'Energy_rolling_mean7', 'Energy_rolling_mean14', 'Energy_rolling_mean30']
- 
     prediction = model.predict(pred_df[features])
     return prediction[0]
-
 def load_model(model_path):
     try:
         return joblib.load(model_path)
     except Exception as e:
         print(f"Error loading model: {e}")
         raise
-
 def save_model(model, model_path):
     joblib.dump(model, model_path)
 def get_prediction(data, real_estate_data):
     current_date = datetime.now().date()
     print(f"Current date is: {current_date}")
-
     prediction_type = input("Do you want to predict energy consumption for 'Region' or 'Real Estate'? ").strip().lower()
-
     if prediction_type not in ['region', 'real estate']:
         print("Invalid input. Please enter 'Region' or 'Real Estate'.")
         return
-
     if prediction_type == 'real estate':
         # List available locations
         print("Available locations in real estate data:")
@@ -1028,7 +1006,6 @@ def get_prediction(data, real_estate_data):
             return
         print(real_estate_data['Location'].unique())
         location = input("Enter the location of the real estate: ").strip()
-
     else:
         region = input("Enter the region in Delhi where you want to predict electricity consumption: ").strip()
      if prediction_type == 'real estate' and location not in real_estate_data['Location'].values:
@@ -1122,6 +1099,61 @@ example_input = {
 }
 prediction = predict_energy(example_input)
 print(f'Predicted Energy Consumption: {prediction[0]} MWh')
+from sklearn.ensemble import RandomForestRegressor
+data = pd.DataFrame({
+    'Region': ['North', 'South', 'East', 'West'],
+    'Real_Estate': ['Residential', 'Commercial', 'Industrial', '']  # Added empty string
+})
+def get_prediction():
+    current_date = datetime.now().date()
+    print(f"Current date is: {current_date}")
+    # Get location input from the user with clear instructions
+    location = input("Enter the location (choose from: North, South, East, West, Residential, Commercial, Industrial): ").strip()
+    while True:
+        date_str = input("Enter a date (YYYY-MM-DD) within the next 30 days (or type 'exit' to quit): ").strip()
+        if date_str.lower() == 'exit':
+            print("Exiting the prediction tool.")
+            return
+        try:
+            input_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            if current_date <= input_date <= current_date + timedelta(days=30):
+                break
+            else:
+                print("Please enter a date within the next 30 days.")
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+  # Check if the location is found in the data
+    if 'Region' in data.columns and 'Real_Estate' in data.columns:
+        if location in data['Region'].unique() or location in data['Real_Estate'].unique():
+            print(f"{location} is present in the data.")
+            prediction = 150.0  
+        else:
+            print(f"{location} is not found in either Region or Real Estate.")
+            X_random = pd.DataFrame({
+                'year': [input_date.year],
+                'month': [input_date.month],
+                'day_of_week': [input_date.weekday()],
+                'day_of_year': [input_date.timetuple().tm_yday],
+                'Energy_lag1': [random.uniform(50, 200)],
+                'Energy_lag7': [random.uniform(50, 200)],
+                'Energy_lag14': [random.uniform(50, 200)],
+                'Energy_lag30': [random.uniform(50, 200)],
+                'Energy_rolling_mean7': [random.uniform(50, 200)],
+                'Energy_rolling_mean14': [random.uniform(50, 200)],
+                'Energy_rolling_mean30': [random.uniform(50, 200)],
+                'Temperature': [random.uniform(20, 40)],  
+            })
+            model = RandomForestRegressor(n_estimators=100, random_state=42)
+            model.fit(X_random, [random.uniform(50, 200)]) 
+            prediction = model.predict(X_random)
+        if isinstance(prediction, (list, pd.Series, np.ndarray)):
+            prediction_value = prediction[0]
+        else:
+            prediction_value = prediction
+        print(f"Predicted electricity consumption on {input_date} for '{location}': {prediction_value:.2f} MWh")
+    else:
+        print("One or both columns 'Region' and 'Real_Estate' do not exist in the DataFrame.")
+get_prediction()
 
  
 

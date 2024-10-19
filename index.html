@@ -92,3 +92,85 @@ function updateRegion(latLng) {
         document.getElementById('region').value = "Restricted Area"; // Mark as restricted
     }
 }
+    // Fetch weather data (temperature and humidity) based on location
+function fetchWeatherData(lat, lon) {
+    const apiKey = '0729eee7d5cbae96be66c848da908f0d'; // Replace with your OpenWeatherMap API key
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Weather data not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Store fetched weather data
+            lastWeatherData.temperature = data.main.temp + ' °C';
+            lastWeatherData.humidity = data.main.humidity + ' %';
+
+            // Update input fields with new data
+            document.getElementById('temperature').value = lastWeatherData.temperature;
+            document.getElementById('humidity').value = lastWeatherData.humidity;
+        })
+        .catch(error => {
+            console.error('Error fetching weather data:', error);
+            // Use last fetched values in case of an error
+            document.getElementById('temperature').value = lastWeatherData.temperature;
+            document.getElementById('humidity').value = lastWeatherData.humidity;
+        });
+}
+// Determine if the selected date is a holiday (basic logic, customizable)
+function checkHoliday(date) {
+    const holidays = ['2024-01-26', '2024-08-15', '2024-10-02']; // Example holiday dates
+    return holidays.includes(date) ? 'Yes' : 'No';
+}
+// Add click event listener to the map for updating marker and region
+map.on('click', function (e) {
+    var latLng = e.latlng;
+    // If a marker exists, move it; if not, create one
+    if (!marker) {
+        marker = L.marker(latLng, { draggable: true }).addTo(map);
+    } else {
+        marker.setLatLng(latLng);
+    }
+    document.getElementById('latitude').value = latLng.lat.toFixed(6);
+    document.getElementById('longitude').value = latLng.lng.toFixed(6);
+    updateRegion(latLng);
+    // Fetch weather data for the new location
+    fetchWeatherData(latLng.lat, latLng.lng);
+    // If the marker is dragged, update the region and weather dynamically
+    marker.on('dragend', function () {
+        var latLng = marker.getLatLng();
+        document.getElementById('latitude').value = latLng.lat.toFixed(6);
+        document.getElementById('longitude').value = latLng.lng.toFixed(6);
+        // Update region after dragging
+        updateRegion(latLng);
+        // Fetch updated weather data for the dragged location
+        fetchWeatherData(latLng.lat, latLng.lng);
+    });
+});
+// Handle Send Data button click
+document.getElementById('sendData').addEventListener('click', function () {
+    var latitude = document.getElementById('latitude').value;
+    var longitude = document.getElementById('longitude').value;
+    var region = document.getElementById('region').value;
+    var date = document.getElementById('date').value;
+    var temperature = document.getElementById('temperature').value;
+    var humidity = document.getElementById('humidity').value;
+    var holiday = checkHoliday(date);
+    // Update the holiday field automatically
+    document.getElementById('holiday').value = holiday;
+    // Update the output section with new data
+    document.getElementById('predicted-date').innerText = date;
+    document.getElementById('predicted-region').innerText = region;
+    document.getElementById('predicted-temperature').innerText = temperature;
+    document.getElementById('predicted-humidity').innerText = humidity;
+    document.getElementById('predicted-holiday').innerText = holiday;
+    document.getElementById('predicted-load').innerText = 'Calculating...';
+    // Simulate load prediction calculation
+    setTimeout(function () {
+        document.getElementById('predicted-load').innerText = (Math.random() * 2000).toFixed(2) + ' MWh';
+    }, 1000);
+});
+</script>
+</body>
+</html>
